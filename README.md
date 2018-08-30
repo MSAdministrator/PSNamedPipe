@@ -1,6 +1,6 @@
 # PSNamedPipe
 
-[![Build status](https://ci.appveyor.com/api/projects/status/u1sdo3sp3cxuf84u?svg=true)](https://ci.appveyor.com/project/Name/psnamedpipe)
+[![Build status](https://ci.appveyor.com/api/projects/status/u1sdo3sp3cxuf84u?svg=true)](https://ci.appveyor.com/project/MSAdministrator/psnamedpipe)
 
 ## PSNamedPipe Title
 
