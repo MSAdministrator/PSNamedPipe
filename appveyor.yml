@@ -24,9 +24,9 @@ pull_requests:
 #Publish to PowerShell Gallery with this key
 environment:
   NuGetApiKey:
-    secure: {NUGETAPIKEY}
+    secure: WDLA88mpIaa4q4If+kY8AeJKZr12zjRZmePooBAaT8AxOk9HG+qaA2KFWq+G2vpI
   GitHubKey:
-    secure: {GITHUB_PERSONAL_ACCESS_TOKEN}
+    secure: Efl6xdTToJDEnOwufIMKcV9pC4Qabo6FFEMGQofWLPPvwfea71v90bawmwGlr2t
 
 # Install NuGet to interact with the PowerShell Gallery
 install:
