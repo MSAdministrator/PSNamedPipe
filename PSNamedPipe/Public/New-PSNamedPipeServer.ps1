@@ -60,9 +60,16 @@ function New-PSNamedPipeServer {
         $Mode
     )
     
-    $pipeServer = New-Object -TypeName System.IO.Pipes.NamedPipeServerStream -ArgumentList @(
-        $Name, $Direction, $MaxInstances, $Mode)
+    Write-Verbose -Message 'Create NamedPipe Server connection'
+    try {
+        $pipeServer = New-Object -TypeName System.IO.Pipes.NamedPipeServerStream -ArgumentList @(
+            $Name, $Direction, $MaxInstances, $Mode)
+    }
+    catch {
+        Write-Error -ErrorRecord $Error[0]
+    }
 
+    Write-Debug -Message 'Waiting for connection to NamedPipe server'
     $pipeServer.WaitForConnection() 
 
     # Write data to the pipe, to be read by the client.

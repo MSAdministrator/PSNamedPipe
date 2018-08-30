@@ -48,17 +48,33 @@ function New-PSNamedPipeClient {
         $Direction
     )
     
-    $pipeClient = New-Object -TypeName System.IO.Pipes.NamedPipeClientStream -ArgumentList @(
-        $ComputerName, $Name, $Direction)
+    Write-Verbose -Message 'Creating NamedPipe Client stream'
 
-    $pipeClient.Connect()
-    $pipeClient.ReadMode = [System.IO.Pipes.PipeTransmissionMode]::Message
+    try {
+        $pipeClient = New-Object -TypeName System.IO.Pipes.NamedPipeClientStream -ArgumentList @(
+            $ComputerName, $Name, $Direction)
+    }
+    catch {
+        Write-Error -ErrorRecord $Error[0]
+    }
+    
+    Write-Verbose -Message 'Creating connection'
 
-    $pipeBuffer = New-Object -TypeName System.Byte[] -ArgumentList 10000
+    try {
+        $pipeClient.Connect()
+        $pipeClient.ReadMode = [System.IO.Pipes.PipeTransmissionMode]::Message
 
+        $pipeBuffer = New-Object -TypeName System.Byte[] -ArgumentList 10000        
+    }
+    catch {
+        Write-Error -ErrorRecord $Error[0]
+    }
+
+    Write-Debug -Message 'Reading from the NamedPipe Server'
     # read from the pipe
     $pipeCounter = $pipeClient.Read($pipeBuffer, 0, $pipeBuffer.count)
 
+    Write-Debug -Message 'Trimming the buffer array'
     # Trim off the unfilled portion of the buffer array.
     $pipeBuffer = $pipeBuffer[0..($pipeCounter - 1)]
 

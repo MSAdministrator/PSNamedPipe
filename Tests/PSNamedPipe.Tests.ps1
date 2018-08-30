@@ -1,7 +1,7 @@
 $TemplatePowerShellModule = 'PSNamedPipe'
 
-#$here = "$(Split-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -Parent)\$TemplatePowerShellModule"
-$here = "$((Get-Location).Path)/$TemplatePowerShellModule"
+$here = "$(Split-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) -Parent)\$TemplatePowerShellModule"
+#$here = "$((Get-Location).Path)/$TemplatePowerShellModule"
 Describe "$TemplatePowerShellModule PowerShell Module Tests" {
     Context 'Module Setup' {
         It "has the root module $TemplatePowerShellModule.psm1" {
