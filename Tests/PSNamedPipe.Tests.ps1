@@ -12,7 +12,6 @@ Describe "$TemplatePowerShellModule PowerShell Module Tests" {
         }
         It "$TemplatePowerShellModule has functions" {
             "$here\Public\*.ps1" | Should exist
-            "$here\Private\*.ps1" | should exist
         }
         It "$TemplatePowerShellModule is valid PowerShell Code" {
             $psFile = Get-Content -Path "$here\$TemplatePowerShellModule.psm1" -ErrorAction Stop
