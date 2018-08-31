@@ -59,7 +59,7 @@ else {
             Path         = ".\$TemplatePowerShellModule"
             NuGetApiKey  = $env:NuGetApiKey
             ErrorAction  = 'Stop'
-            Tags         = @('', '')
+            Tags         = @('NamedPipe','Client','Server','Connect')
             LicenseUri   = "https://github.com/$Name/$TemplatePowerShellModule/blob/master/LICENSE.md"
             ProjectUri   = "https://github.com/$Name/$TemplatePowerShellModule"
             ReleaseNotes = 'Initial release to the PowerShell Gallery'
