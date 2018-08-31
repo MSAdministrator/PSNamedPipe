@@ -79,7 +79,7 @@ before_deploy:
         (Get-Content -Path $manifestPath) -replace "$($functionList[-1])'", "$($functionList[-1])')" | Set-Content -Path $manifestPath -Force}
   - ps: |
       # Create new markdown and XML help files
-      Write-Host "Building new function documentation" -ForegroundColor Yellow
+      Write-Host "Building new module documentation" -ForegroundColor Yellow
       Import-Module "$env:project_name\$env:project_name.psm1" -Force
       New-MarkdownHelp -Module "$env:project_name" -OutputFolder '.\docs\' -Force
       New-ExternalHelp -Path '.\docs\' -OutputPath ".\$env:project_name\en-US\" -Force
