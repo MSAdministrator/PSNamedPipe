@@ -23,6 +23,8 @@ pull_requests:
 
 #Publish to PowerShell Gallery with this key
 environment:
+  project_name: PSNamedPipe
+  creator_name: MSAdministrator
   NuGetApiKey:
     secure: WDLA88mpIaa4q4If+kY8AeJKZr12zjRZmePooBAaT8AxOk9HG+qaA2KFWq+G2vpI
   GitHubKey:
@@ -39,6 +41,77 @@ test_script:
       $res = Invoke-Pester -Path ".\Tests" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
       (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
       if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed."}
+after_test:
+  - ps: |
+      Write-Host "Building new function documentation" -ForegroundColor Yellow
+      Import-Module -Name "$PSScriptRoot\$TemplatePowerShellModule" -Force
+      New-MarkdownHelp -Module $TemplatePowerShellModule -OutputFolder '.\docs\' -Force
+      New-ExternalHelp -Path '.\docs\' -OutputPath ".\$TemplatePowerShellModule\en-US\" -Force
+      . .\docs.ps1
+      Write-Host -Object ''
+artifacts:
+  - path: docs
+  - path: en-US
+  - path: TestsResults.xml
+before_deploy:
+  - ps: |
+      # Make sure we're using the Master branch and that it's not a pull request
+      # Environmental Variables Guide: https://www.appveyor.com/docs/environment-variables/
+      if ($env:APPVEYOR_REPO_BRANCH -ne 'master') {
+          Write-Warning -Message "Skipping version increment and publish for branch $env:APPVEYOR_REPO_BRANCH"
+      }
+      elseif ($env:APPVEYOR_PULL_REQUEST_NUMBER -gt 0) {
+          Write-Warning -Message "Skipping version increment and publish for pull request #$env:APPVEYOR_PULL_REQUEST_NUMBER"
+      }
+      else {
+        # We're going to add 1 to the revision value since a new commit has been merged to Master
+        # This means that the major / minor / build values will be consistent across GitHub and the Gallery
+        # This is where the module manifest lives
+        $manifestPath = ".\$env:project_name\$env:project_name.psd1"
+
+        # Start by importing the manifest to determine the version, then add 1 to the revision
+        $manifest = Test-ModuleManifest -Path $manifestPath
+        [System.Version]$version = $manifest.Version
+        Write-Output "Old Version: $version"
+        [String]$newVersion = New-Object -TypeName System.Version -ArgumentList ($version.Major, $version.Minor, $version.Build, $env:APPVEYOR_BUILD_NUMBER)
+        Write-Output "New Version: $newVersion"
+
+        # Update the manifest with the new version value and fix the weird string replace bug
+        $functionList = ((Get-ChildItem -Path .\$env:project_name\Public).BaseName)
+        $splat = @{
+            'Path'              = $manifestPath
+            'ModuleVersion'     = $newVersion
+            'FunctionsToExport' = $functionList
+            'Copyright'         = "(c) 2015-$( (Get-Date).Year ) $env:creator_name. All rights reserved."
+        }
+        Update-ModuleManifest @splat
+        (Get-Content -Path $manifestPath) -replace "PSGet_$env:project_name", "$env:project_name" | Set-Content -Path $manifestPath
+        (Get-Content -Path $manifestPath) -replace 'NewManifest', $env:project_name | Set-Content -Path $manifestPath
+        (Get-Content -Path $manifestPath) -replace 'FunctionsToExport = ', 'FunctionsToExport = @(' | Set-Content -Path $manifestPath -Force
+        (Get-Content -Path $manifestPath) -replace "$($functionList[-1])'", "$($functionList[-1])')" | Set-Content -Path $manifestPath -Force}
+  - ps: |
+      # Create new markdown and XML help files
+      Write-Host "Building new function documentation" -ForegroundColor Yellow
+      Import-Module "$env:project_name\$env:project_name.psm1" -Force
+      New-MarkdownHelp -Module "$env:project_name" -OutputFolder '.\docs\' -Force
+      New-ExternalHelp -Path '.\docs\' -OutputPath ".\$env:project_name\en-US\" -Force
+      . .\docs.ps1
+      Write-Host -Object ''
+deploy_script:
+  - ps: |
+      # Build a splat containing the required details and make sure to Stop for errors which will trigger the catch
+      $PM = @{
+          Path         = ".\PSNamedPipe"
+          NuGetApiKey  = $env:NuGetApiKey
+          ErrorAction  = 'Stop'
+          Tags         = @('NamedPipe','Client','Server','Connect')
+          LicenseUri   = "https://github.com/MSAdministrator/PSNamedPipe/blob/master/LICENSE.md"
+          ProjectUri   = "https://github.com/MSAdministrator/PSNamedPipe"
+          ReleaseNotes = 'Initial release to the PowerShell Gallery'
+      }
+      Publish-Module @PM
+      Write-Host "PSNamedPipe PowerShell Module version $newVersion published to the PowerShell Gallery." -ForegroundColor Cyan
+on_success:
   - git config --global credential.helper store
   - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:GitHubKey):x-oauth-basic@github.com`n"
   - git config --global user.email "MSAdministrator@users.noreply.github.com"
@@ -46,5 +119,13 @@ test_script:
   - git config --global core.autocrlf true
   - git config --global core.safecrlf false
   - ps: |
-      write-host "calling build.ps1"
-      . .\build.ps1
+      # Set up a path to the git.exe cmd, import posh-git to give us control over git, and then push changes to GitHub
+      # Note that "update version" is included in the appveyor.yml file's "skip a build" regex to avoid a loop
+      $env:Path += ";$env:ProgramFiles\Git\cmd"
+      Import-Module posh-git -ErrorAction Stop
+  - git checkout master
+  - git add --all
+  - git status
+  - git commit -s -m "Update version to $newVersion"
+  - git push origin master
+  - ps: Write-Host "$env:project_name PowerShell Module version $newVersion published to GitHub." -ForegroundColor Cyan
