@@ -41,18 +41,6 @@ test_script:
       $res = Invoke-Pester -Path ".\Tests" -OutputFormat NUnitXml -OutputFile TestsResults.xml -PassThru
       (New-Object 'System.Net.WebClient').UploadFile("https://ci.appveyor.com/api/testresults/nunit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path .\TestsResults.xml))
       if ($res.FailedCount -gt 0) { throw "$($res.FailedCount) tests failed."}
-after_test:
-  - ps: |
-      Write-Host "Building new function documentation" -ForegroundColor Yellow
-      Import-Module -Name "$PSScriptRoot\$TemplatePowerShellModule" -Force
-      New-MarkdownHelp -Module $TemplatePowerShellModule -OutputFolder '.\docs\' -Force
-      New-ExternalHelp -Path '.\docs\' -OutputPath ".\$TemplatePowerShellModule\en-US\" -Force
-      . .\docs.ps1
-      Write-Host -Object ''
-artifacts:
-  - path: docs
-  - path: en-US
-  - path: TestsResults.xml
 before_deploy:
   - ps: |
       # Make sure we're using the Master branch and that it's not a pull request
@@ -97,6 +85,10 @@ before_deploy:
       New-ExternalHelp -Path '.\docs\' -OutputPath ".\$env:project_name\en-US\" -Force
       . .\docs.ps1
       Write-Host -Object ''
+artifacts:
+  - path: docs
+  - path: en-US
+  - path: TestsResults.xml
 deploy_script:
   - ps: |
       # Build a splat containing the required details and make sure to Stop for errors which will trigger the catch
