@@ -107,7 +107,7 @@ on_success:
   - git config --global credential.helper store
   - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:GitHubKey):x-oauth-basic@github.com`n"
   - git config --global user.email "MSAdministrator@users.noreply.github.com"
-  - git config --global user.name "Josh Rickard"
+  - git config --global user.name "MSAdministrator"
   - git config --global core.autocrlf true
   - git config --global core.safecrlf false
   - ps: |
