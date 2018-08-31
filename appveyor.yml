@@ -72,14 +72,14 @@ before_deploy:
         $manifest = Test-ModuleManifest -Path $manifestPath
         [System.Version]$version = $manifest.Version
         Write-Output "Old Version: $version"
-        [String]$newVersion = New-Object -TypeName System.Version -ArgumentList ($version.Major, $version.Minor, $version.Build, $env:APPVEYOR_BUILD_NUMBER)
-        Write-Output "New Version: $newVersion"
+        [String]$env:newVersion = New-Object -TypeName System.Version -ArgumentList ($version.Major, $version.Minor, $version.Build, $env:APPVEYOR_BUILD_NUMBER)
+        Write-Output "New Version: $env:newVersion"
 
         # Update the manifest with the new version value and fix the weird string replace bug
         $functionList = ((Get-ChildItem -Path .\$env:project_name\Public).BaseName)
         $splat = @{
             'Path'              = $manifestPath
-            'ModuleVersion'     = $newVersion
+            'ModuleVersion'     = $env:newVersion
             'FunctionsToExport' = $functionList
             'Copyright'         = "(c) 2015-$( (Get-Date).Year ) $env:creator_name. All rights reserved."
         }
@@ -113,7 +113,7 @@ deploy_script:
           ReleaseNotes = 'Initial release to the PowerShell Gallery'
       }
       Publish-Module @PM
-      Write-Host "PSNamedPipe PowerShell Module version $newVersion published to the PowerShell Gallery." -ForegroundColor Cyan
+      Write-Host "PSNamedPipe PowerShell Module version $env:newVersion published to the PowerShell Gallery." -ForegroundColor Cyan
 on_success:
   - ps: |
       # Set up a path to the git.exe cmd, import posh-git to give us control over git, and then push changes to GitHub
@@ -121,11 +121,11 @@ on_success:
       $env:Path += ";$env:ProgramFiles\Git\cmd"
       Import-Module posh-git -ErrorAction Stop
   - git config --global credential.helper store
-  - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:GitHubKey):x-oauth-basic@github.com`n"
+  - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:GitHubKey):x-oauth-basic@github.com`n" -Force
   - git config --global user.email "MSAdministrator@users.noreply.github.com"
   - git config --global user.name "MSAdministrator"
   - git add --all
   - git status
-  - git commit -s -m "Update version to $newVersion"
+  - git commit -s -m "Update version to $env:newVersion"
   - git push origin master
-  - ps: Write-Host "$env:project_name PowerShell Module version $newVersion published to GitHub." -ForegroundColor Cyan
+  - ps: Write-Host "$env:project_name PowerShell Module version $env:newVersion published to GitHub." -ForegroundColor Cyan
