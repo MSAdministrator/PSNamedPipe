@@ -10,6 +10,17 @@ build: off
 # Version number
 version: 1.0.0.{build}
 
+# branches to build
+branches:
+  # whitelist
+  only:
+    - master
+    
+skip_branch_with_pr: true
+
+init:
+  - git config --global core.autocrlf input
+
 # Ignore testing a commit if only the README.md file changed
 # Or if various strings are found in the commit message: updated readme, update readme, update docs, update version, update appveyor
 skip_commits:
@@ -104,18 +115,15 @@ deploy_script:
       Publish-Module @PM
       Write-Host "PSNamedPipe PowerShell Module version $newVersion published to the PowerShell Gallery." -ForegroundColor Cyan
 on_success:
-  - git config --global credential.helper store
-  - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:GitHubKey):x-oauth-basic@github.com`n"
-  - git config --global user.email "MSAdministrator@users.noreply.github.com"
-  - git config --global user.name "MSAdministrator"
-  - git config --global core.autocrlf true
-  - git config --global core.safecrlf false
   - ps: |
       # Set up a path to the git.exe cmd, import posh-git to give us control over git, and then push changes to GitHub
       # Note that "update version" is included in the appveyor.yml file's "skip a build" regex to avoid a loop
       $env:Path += ";$env:ProgramFiles\Git\cmd"
       Import-Module posh-git -ErrorAction Stop
-  - git checkout master
+  - git config --global credential.helper store
+  - ps: Add-Content "$env:USERPROFILE\.git-credentials" "https://$($env:GitHubKey):x-oauth-basic@github.com`n"
+  - git config --global user.email "MSAdministrator@users.noreply.github.com"
+  - git config --global user.name "MSAdministrator"
   - git add --all
   - git status
   - git commit -s -m "Update version to $newVersion"
